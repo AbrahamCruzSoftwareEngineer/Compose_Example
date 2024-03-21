@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
@@ -14,6 +15,7 @@ class MyViewModel : ViewModel() {
     private val _images = MutableLiveData<List<String>>()
     val images: LiveData<List<String>> = _images
 
+    //This returns the total of images for each query (some have 1000 or more urls)
     fun searchByNameFullResponse(query: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -30,6 +32,7 @@ class MyViewModel : ViewModel() {
         }
     }
 
+    //This will only return the first 5 results from the API
     fun searchByNameLimited(query: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -55,6 +58,20 @@ class MyViewModel : ViewModel() {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
+
+    private fun getRetrofitWithInterceptor(): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl("https://dog.ceo/api/breed/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .client(getClient())
+            .build()
+    }
+
+    private fun getClient(): OkHttpClient =
+        OkHttpClient.Builder()
+            .addInterceptor(HeaderInterceptor())
+            .build()
+
 
     companion object {
         const val TAG = "MyViewModel"
