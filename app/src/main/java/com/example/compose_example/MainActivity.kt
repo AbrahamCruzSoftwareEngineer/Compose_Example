@@ -1,13 +1,12 @@
 package com.example.compose_example
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.MaterialTheme
@@ -22,10 +21,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImagePainter
+import coil.compose.rememberAsyncImagePainter
 import com.example.compose_example.ui.theme.Compose_ExampleTheme
 
 class MainActivity : ComponentActivity() {
@@ -41,7 +43,7 @@ class MainActivity : ComponentActivity() {
                         color = MaterialTheme.colors.background
                     ) {
                         // Now passing a lambda for onTitleChange
-                        UrlListWidget("akita", images) { updatedTitle ->
+                        UrlListWidgetWithImage("akita", images) { updatedTitle ->
                             viewModel.searchByNameLimited(updatedTitle)
                         }
                     }
@@ -99,9 +101,97 @@ fun UrlListWidget(title: String, imageUrls: List<String>, onTitleChange: (String
 
 @Preview(showBackground = true)
 @Composable
-fun ListOfImagesPreview() {
+fun UrlListWidgetPreview() {
     Compose_ExampleTheme {
         UrlListWidget(
+            title = "Text",
+            imageUrls = listOf(
+                "https://images.dog.ceo/breeds/hound-afghan/n02088094_1003.jpg",
+                "https://images.dog.ceo/breeds/hound-afghan/n02088094_1007.jpg",
+                "https://images.dog.ceo/breeds/hound-afghan/n02088094_1023.jpg"
+            )
+        ) {}
+    }
+}
+
+@Composable
+fun UrlListWidgetWithImage(
+    title: String,
+    imageUrls: List<String>,
+    onTitleChange: (String) -> Unit
+) {
+    // State to hold the current value of the text field
+    var textFieldValue by remember { mutableStateOf(title) }
+
+    Column {
+        // TextField for editable title
+        TextField(
+            value = textFieldValue,
+            onValueChange = { newValue ->
+                textFieldValue = newValue
+                onTitleChange(newValue)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(30.dp),
+            textStyle = TextStyle(fontSize = 24.sp),
+            singleLine = true,
+        )
+        Divider(
+            modifier = Modifier.fillMaxWidth(),
+            color = Color.Gray,
+            thickness = 1.dp,
+        )
+        LazyColumn {
+            itemsIndexed(imageUrls) { index, imageUrl ->
+                // Prepare the AsyncImagePainter
+                val painter = rememberAsyncImagePainter(model = imageUrl)
+
+                // Use the painter with an Image composable
+                Image(
+                    painter = painter,
+                    contentDescription = "Loaded image from URL",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        // Optionally, adjust the aspect ratio based on your needs
+                        .aspectRatio(1f),
+                    contentScale = ContentScale.Crop // Adjusts how the image fills its bounds
+                )
+
+                // Optionally, handle different painter states
+                when (painter.state) {
+                    is AsyncImagePainter.State.Loading -> {
+                        Log.d("Images State:", "Loading...")
+                    }
+                    is AsyncImagePainter.State.Success -> {
+                        Log.d("Images State:", "Success...")
+                    }
+                    is AsyncImagePainter.State.Error -> {
+                        Log.e("Images State:", "Error...")
+                    }
+                    else -> Unit // Other states can be handled if needed
+                }
+
+                if (index < imageUrls.size - 1) {
+                    Divider(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp, bottom = 16.dp),
+                        color = Color.Gray,
+                        thickness = 1.dp,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun UrlListWidgetWithImagePreview() {
+    Compose_ExampleTheme {
+        UrlListWidgetWithImage(
             title = "Text",
             imageUrls = listOf(
                 "https://images.dog.ceo/breeds/hound-afghan/n02088094_1003.jpg",
